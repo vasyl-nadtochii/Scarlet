@@ -123,7 +123,7 @@ public class PlaceholderFragment extends Fragment {
         TrackListAdapter(@NonNull List<Track> trackList, Context context) {
             super(context, R.layout.track_item, trackList);
             this.iTrackList = trackList;
-            this.context = context;
+            this.context = context; //
         }
 
         @NonNull
