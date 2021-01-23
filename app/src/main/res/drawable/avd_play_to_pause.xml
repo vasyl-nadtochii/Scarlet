@@ -11,7 +11,7 @@
             <path
                 android:name="path_1"
                 android:pathData="M 35.353 0 L 459.589 247.471 L 35.353 494.942 Z"
-                android:fillColor="#000"
+                android:fillColor="#FDFDFD"
                 android:strokeWidth="1"/>
         </vector>
     </aapt:attr>

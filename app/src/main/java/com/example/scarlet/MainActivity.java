@@ -2,8 +2,7 @@ package com.example.scarlet;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.drawable.RoundedBitmapDrawable;
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.slidingpanelayout.widget.SlidingPaneLayout;
 import androidx.viewpager.widget.ViewPager;
 
@@ -14,9 +13,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.AnimatedVectorDrawable;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
@@ -30,6 +29,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.Chronometer;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -37,6 +37,7 @@ import android.widget.TextView;
 import com.example.scarlet.PageView.SectionsPagerAdapter;
 import com.example.scarlet.Services.MusicService;
 import com.google.android.material.tabs.TabLayout;
+import com.jgabrielfreitas.core.BlurImageView;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -67,7 +68,9 @@ public class MainActivity extends AppCompatActivity
     ImageView image, smallImage, pause;
     SeekBar seekBar;
     Chronometer timer;
-    Button next, prev, smallPause, repeatSet;
+    Button next, prev, smallPause, repeatSet, sk_forward, sk_backward;
+    BlurImageView bgImg;
+    EditText editText;
 
     SlidingUpPanelLayout.PanelState zeroPanelState;
     Animation fadeOut, fadeIn;
@@ -140,23 +143,49 @@ public class MainActivity extends AppCompatActivity
         TabLayout tabs = findViewById(R.id.tabs);
         tabs.setupWithViewPager(viewPager);
 
-        slider =  findViewById(R.id.slider);
+        slider = findViewById(R.id.slider);
+        slider.setTouchEnabled(false);  //temporary !
+
         view = findViewById(R.id.whiteView);
 
+        editText = findViewById(R.id.edit_txt);
+
         image = findViewById(R.id.image);
+        bgImg = findViewById(R.id.bg_image);
+
         songNameLabel = findViewById(R.id.songName);
         songArtistLabel = findViewById(R.id.artistName);
 
         seekBar = findViewById(R.id.seekBar);
-        seekBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.color4),
+        seekBar.getProgressDrawable().setColorFilter(Color.parseColor("#ffffff"),
                 PorterDuff.Mode.MULTIPLY);
-        seekBar.getThumb().setColorFilter(getResources().getColor(R.color.color4),
+        seekBar.getThumb().setColorFilter(Color.parseColor("#ffffff"),
                 PorterDuff.Mode.SRC_IN);
+
         timer = findViewById(R.id.timer);
+
         pause = findViewById(R.id.pause);
         next = findViewById(R.id.next);
         prev = findViewById(R.id.prev);
+
         repeatSet = findViewById(R.id.repeat);
+
+        sk_backward = findViewById(R.id.back5);
+        sk_forward = findViewById(R.id.forward5);
+
+        sk_forward.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                changePlayingPos(mediaPlayer.getCurrentPosition() + 5000);
+            }
+        });
+
+        sk_backward.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                changePlayingPos(mediaPlayer.getCurrentPosition() - 5000);
+            }
+        });
 
         smallPlayer = findViewById(R.id.smallPlayer);
         smallNameLabel = findViewById(R.id.smallSongName);
@@ -164,11 +193,13 @@ public class MainActivity extends AppCompatActivity
         smallPause = findViewById(R.id.smallPause);
         smallImage = findViewById(R.id.smallImage);
 
-        final Drawable default_dr = createRoundedDrawable(default_ic);
-
         callBacks = new CallBacks() {
             @Override
             public void updateUI(String songName, String songArtist, int duration, Bitmap imgURI) {
+                if(!slider.isTouchEnabled()) {
+                    slider.setTouchEnabled(true);       //temporary !
+                }
+
                 songNameLabel.setText(songName);
                 songArtistLabel.setText(songArtist);
 
@@ -179,14 +210,16 @@ public class MainActivity extends AppCompatActivity
                 songArtistLabel.setSelected(true);
 
                 try {
-                    RoundedBitmapDrawable dr = createRoundedDrawable(imgURI);
-                    image.setImageDrawable(dr);
-                    smallImage.setImageDrawable(createDrawable(imgURI));
+                    image.setImageBitmap(imgURI);
+                    smallImage.setImageBitmap(imgURI);
+                    bgImg.setImageBitmap(imgURI);
+                } catch (Exception e) {
+                    image.setImageBitmap(default_ic);
+                    smallImage.setImageBitmap(default_ic);
+                    bgImg.setImageBitmap(default_ic);
                 }
-                catch (Exception e) {
-                    image.setImageDrawable(default_dr);
-                    smallImage.setImageDrawable(createDrawable(default_ic));
-                }
+
+                bgImg.setBlur(5);
 
                 seekBar.setMax(duration);
             }
@@ -206,17 +239,14 @@ public class MainActivity extends AppCompatActivity
                         }
                     };
                     handler.postDelayed(notification, 500);
-                }
-                else if (!mediaPlayer.isPlaying() &&
+                } else if (!mediaPlayer.isPlaying() &&
                         mediaPlayer.getCurrentPosition() < mediaPlayer.getDuration() - 3000) {
                     mediaPlayer.pause();
                     timer.stop();
-                }
-                else {
-                    if(isRepeating) {
+                } else {
+                    if (isRepeating) {
                         musicSrv.prepareUpdater(tracklist.get(trackPos), context);
-                    }
-                    else {
+                    } else {
                         musicSrv.nextTrack(getApplication());
                     }
                 }
@@ -241,9 +271,11 @@ public class MainActivity extends AppCompatActivity
 
                 switch (action) {
                     case "SET_PAUSE_DR":
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.avd_play_to_pause));
+                        pause.setImageDrawable( ResourcesCompat
+                                .getDrawable( getResources(), R.drawable.avd_play_to_pause, getTheme() ) );
+
                         drawable = pause.getDrawable();
-                        if(drawable instanceof AnimatedVectorDrawable) {
+                        if (drawable instanceof AnimatedVectorDrawable) {
                             avDr = (AnimatedVectorDrawable) drawable;
                             avDr.start();
                         }
@@ -251,7 +283,9 @@ public class MainActivity extends AppCompatActivity
                         smallPause.setBackgroundResource(R.drawable.ic_pause);
                         break;
                     case "SET_PLAY_DR":
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.avd_pause_to_play));
+                        pause.setImageDrawable( ResourcesCompat
+                                .getDrawable( getResources(), R.drawable.avd_pause_to_play, getTheme() ) );
+
                         drawable = pause.getDrawable();
                         if (drawable instanceof AnimatedVectorDrawable) {
                             avDr = (AnimatedVectorDrawable) drawable;
@@ -264,7 +298,7 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
-        if(mediaPlayer != null) {
+        if (mediaPlayer != null) {
             callBacks.updateUI(
                     musicSrv.currentTrack.getSongName(),
                     musicSrv.currentTrack.getSongArtist(),
@@ -283,11 +317,10 @@ public class MainActivity extends AppCompatActivity
         repeatSet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!isRepeating) {
+                if (!isRepeating) {
                     isRepeating = true;
                     repeatSet.setBackgroundResource(R.drawable.ic_repeat_active);
-                }
-                else {
+                } else {
                     isRepeating = false;
                     repeatSet.setBackgroundResource(R.drawable.ic_repeat_black_24dp);
                 }
@@ -297,7 +330,7 @@ public class MainActivity extends AppCompatActivity
         next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mediaPlayer != null)
+                if (mediaPlayer != null)
                     musicSrv.nextTrack(getApplication());
             }
         });
@@ -305,7 +338,7 @@ public class MainActivity extends AppCompatActivity
         prev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mediaPlayer != null)
+                if (mediaPlayer != null)
                     musicSrv.prevTrack(getApplication());
             }
         });
@@ -313,7 +346,7 @@ public class MainActivity extends AppCompatActivity
         pause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mediaPlayer != null)
+                if (mediaPlayer != null)
                     musicSrv.playAndPause(getApplication());
             }
         });
@@ -321,7 +354,7 @@ public class MainActivity extends AppCompatActivity
         smallPlayer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mediaPlayer != null)
+                if (mediaPlayer != null)
                     slider.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
             }
         });
@@ -329,22 +362,24 @@ public class MainActivity extends AppCompatActivity
         smallPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mediaPlayer != null)
+                if (mediaPlayer != null)
                     musicSrv.playAndPause(getApplication());
             }
         });
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) { }
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            }
 
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) { }
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                if(mediaPlayer != null)
-                    changePlayingPos();
+                if (mediaPlayer != null)
+                    changePlayingPos(seekBar.getProgress());
             }
         });
 
@@ -352,7 +387,7 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onPanelSlide(View panel, float slideOffset) {
-                if(slider.getPanelState() == SlidingUpPanelLayout.PanelState.EXPANDED)
+                if (slider.getPanelState() == SlidingUpPanelLayout.PanelState.EXPANDED)
                     smallPlayer.setVisibility(View.GONE);
             }
 
@@ -360,20 +395,18 @@ public class MainActivity extends AppCompatActivity
             public void onPanelStateChanged(View panel, SlidingUpPanelLayout.PanelState previousState,
                                             SlidingUpPanelLayout.PanelState newState) {
 
-                if(firstLaunch && newState == SlidingUpPanelLayout.PanelState.EXPANDED) {
+                if (firstLaunch && newState == SlidingUpPanelLayout.PanelState.EXPANDED) {
                     fadeOut();
                     smallPlayer.setVisibility(View.GONE);
 
                     firstLaunch = false;
-                }
-                else if(!firstLaunch && zeroPanelState == SlidingUpPanelLayout.PanelState.COLLAPSED
+                } else if (!firstLaunch && zeroPanelState == SlidingUpPanelLayout.PanelState.COLLAPSED
                         && newState == SlidingUpPanelLayout.PanelState.COLLAPSED) {
 
                     zeroPanelState = SlidingUpPanelLayout.PanelState.EXPANDED;
                     fadeIn();
                     smallPlayer.setVisibility(View.VISIBLE);
-                }
-                else if(!firstLaunch && zeroPanelState == SlidingUpPanelLayout.PanelState.EXPANDED
+                } else if (!firstLaunch && zeroPanelState == SlidingUpPanelLayout.PanelState.EXPANDED
                         && newState == SlidingUpPanelLayout.PanelState.EXPANDED) {
 
                     zeroPanelState = SlidingUpPanelLayout.PanelState.COLLAPSED;
@@ -384,22 +417,8 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    private RoundedBitmapDrawable createRoundedDrawable(Bitmap bitmap) {
-        RoundedBitmapDrawable roundedBitmapDrawable =
-                RoundedBitmapDrawableFactory.create(getResources(), bitmap);
-        final float roundPx = (float) bitmap.getWidth() * 0.04f;
-
-        roundedBitmapDrawable.setCornerRadius(roundPx);
-
-        return roundedBitmapDrawable;
-    }
-
-    private Drawable createDrawable(Bitmap bitmap) {
-        return new BitmapDrawable(getResources(), bitmap);
-    }
-
-    public void changePlayingPos() {
-        mediaPlayer.seekTo(seekBar.getProgress());
+    public void changePlayingPos(int pos) {
+        mediaPlayer.seekTo(pos);
         timer.setBase(SystemClock.elapsedRealtime() - mediaPlayer.getCurrentPosition());
     }
 
@@ -412,6 +431,7 @@ public class MainActivity extends AppCompatActivity
         ArrayList<Track> arrayList = new ArrayList<>();
         File[] files = file.listFiles();
 
+        assert files != null;
         for (File singleFile: files) {
             if(singleFile.getName().endsWith(".mp3") && !singleFile.isDirectory()) {
                 metadataRetriever.setDataSource(singleFile.getPath());
@@ -421,12 +441,12 @@ public class MainActivity extends AppCompatActivity
                 String artistName = metadataRetriever
                         .extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
 
-                if(songName == null) {
+                if (songName == null) {
                     songName = singleFile
                             .getName()
                             .replace(".mp3", "");
                 }
-                if(artistName == null) {
+                if (artistName == null) {
                     artistName = "Unknown Artist";
                 }
 
@@ -435,7 +455,7 @@ public class MainActivity extends AppCompatActivity
                 byte[] albumURI = metadataRetriever.getEmbeddedPicture();
 
                 Bitmap art;
-                if(albumURI != null)
+                if (albumURI != null)
                     art = BitmapFactory.decodeByteArray(albumURI, 0, albumURI.length);
                 else
                     art = default_ic;
@@ -493,9 +513,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onDestroy() {
-        if(!mediaPlayer.isPlaying()) {
-            stopService(playIntent);
-        }
         super.onDestroy();
     }
 }
