@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity
         Collections.sort(tracklist, new Comparator<Track>() {
             @Override
             public int compare(Track o1, Track o2) {
-                return o1.getSongName().compareTo(o2.getSongName());
+                return o1.getSongName().toLowerCase().compareTo(o2.getSongName().toLowerCase());
             }
         });
 
