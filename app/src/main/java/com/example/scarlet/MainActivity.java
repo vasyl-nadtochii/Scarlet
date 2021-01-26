@@ -31,6 +31,7 @@ import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -151,6 +152,8 @@ public class MainActivity extends AppCompatActivity
         editText = findViewById(R.id.edit_txt);
 
         image = findViewById(R.id.image);
+        //image.setMinimumHeight(image.getWidth());
+
         bgImg = findViewById(R.id.bg_image);
 
         songNameLabel = findViewById(R.id.songName);
@@ -322,7 +325,7 @@ public class MainActivity extends AppCompatActivity
                     repeatSet.setBackgroundResource(R.drawable.ic_repeat_active);
                 } else {
                     isRepeating = false;
-                    repeatSet.setBackgroundResource(R.drawable.ic_repeat_black_24dp);
+                    repeatSet.setBackgroundResource(R.drawable.ic_repeat);
                 }
             }
         });
@@ -513,6 +516,8 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onDestroy() {
+        if(!mediaPlayer.isPlaying())
+            musicSrv.stopSelf();
         super.onDestroy();
     }
 }

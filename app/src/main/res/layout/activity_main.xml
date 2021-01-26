@@ -36,11 +36,12 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/search"
                     android:inputType="text"
-                    android:padding="5dp"
+                    android:padding="10dp"
                     android:id="@+id/edit_txt"
                     android:drawableEnd="@drawable/ic_search"
                     android:textColor="#2C2C2C"
-                    android:background="@drawable/bg_search"/>
+                    android:background="@drawable/bg_search"
+                    tools:ignore="RtlSymmetry" />
 
             </RelativeLayout>
 
@@ -76,6 +77,11 @@
                     android:scaleType="centerCrop"
                     android:adjustViewBounds="true"/>
 
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#27000000"/>
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -86,7 +92,8 @@
                         android:id="@+id/image"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:scaleType="fitCenter"
+                        app:layout_constraintDimensionRatio="1:1"
+                        android:scaleType="centerCrop"
                         android:src="@drawable/album2"
                         android:adjustViewBounds="true"
                         android:background="@android:drawable/dialog_holo_light_frame"
@@ -111,7 +118,7 @@
                         android:layout_height="wrap_content"
                         android:text="Linkin Park"
                         android:textSize="20sp"
-                        android:textColor="#d6d6d6"
+                        android:textColor="#E4E4E4"
                         android:ellipsize="marquee"
                         android:marqueeRepeatLimit="marquee_forever"
                         android:scrollHorizontally="true"
@@ -126,7 +133,7 @@
                         android:layout_height="25dp"
                         android:layout_gravity="center_horizontal"
                         android:layout_marginTop="50dp"
-                        android:background="@drawable/ic_repeat_black_24dp"/>
+                        android:background="@drawable/ic_repeat"/>
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -209,6 +216,7 @@
                     android:layout_width="75dp"
                     android:layout_height="75dp"
                     android:id="@+id/smallImage"
+                    android:scaleType="centerCrop"
                     android:layout_alignParentStart="true"
                     android:src="@drawable/album2"/>
 
